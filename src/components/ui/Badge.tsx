@@ -9,7 +9,7 @@ type BadgeProps = {
 const toneClasses: Record<NonNullable<BadgeProps["tone"]>, string> = {
   blue: "bg-blue-500/15 border-blue-400/40 text-blue-200",
   neutral: "bg-elevated/10 border-line/15 text-foreground/70",
-  live: "bg-coral/15 border-coral/40 text-coral",
+  live: "bg-red-500/15 border-red-400/40 text-red-300",
 };
 
 export default function Badge({ children, tone = "blue" }: BadgeProps) {

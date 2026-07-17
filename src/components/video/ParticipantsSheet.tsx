@@ -1,8 +1,9 @@
 import { FlatList, Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LogOut, MicOff, Power, UserMinus, X } from "lucide-react-native";
 import Avatar from "@/components/ui/Avatar";
 import Button from "@/components/ui/Button";
-import { darkColors as colors } from "@/theme/colors";
+import { useThemeColors } from "@/hooks/useThemeColors";
 import { useRoomStore } from "@/stores/roomStore";
 
 type ParticipantsSheetProps = {
@@ -13,13 +14,18 @@ type ParticipantsSheetProps = {
 };
 
 export default function ParticipantsSheet({ isHost, onClose, onLeave, onEndRoom }: ParticipantsSheetProps) {
+  const insets = useSafeAreaInsets();
+  const colors = useThemeColors();
   const participants = useRoomStore((s) => s.participants);
   const removeParticipant = useRoomStore((s) => s.removeParticipant);
 
   return (
-    <View className="absolute inset-x-0 bottom-0 max-h-[70%] rounded-t-3xl border border-white/10 bg-navy-950 p-4">
+    <View
+      className="absolute inset-x-0 bottom-0 max-h-[70%] rounded-t-3xl border border-line/10 bg-navy-950 p-4"
+      style={{ paddingBottom: insets.bottom + 16 }}
+    >
       <View className="mb-3 flex-row items-center justify-between">
-        <Text className="text-sm font-['Manrope_600SemiBold'] text-white">Participants ({participants.length})</Text>
+        <Text className="text-sm font-['Manrope_600SemiBold'] text-foreground">Participants ({participants.length})</Text>
         <Pressable onPress={onClose} hitSlop={8}>
           <X size={18} color={colors.blue300} />
         </Pressable>
@@ -34,13 +40,13 @@ export default function ParticipantsSheet({ isHost, onClose, onLeave, onEndRoom 
             <View className="flex-row items-center gap-3">
               <Avatar name={item.name} uri={item.avatarUri} size={36} />
               <View>
-                <Text className="text-sm font-['Manrope_500Medium'] text-white">
+                <Text className="text-sm font-['Manrope_500Medium'] text-foreground">
                   {item.name} {item.isHost && <Text className="text-xs text-blue-300">· Host</Text>}
                 </Text>
                 {!item.micOn && (
                   <View className="mt-0.5 flex-row items-center gap-1">
-                    <MicOff size={10} color="rgba(255,255,255,0.5)" />
-                    <Text className="text-[11px] text-white/50">Muted</Text>
+                    <MicOff size={10} color={colors.foreground + "80"} />
+                    <Text className="text-[11px] text-foreground/50">Muted</Text>
                   </View>
                 )}
               </View>

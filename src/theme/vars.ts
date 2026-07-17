@@ -25,8 +25,8 @@ function paletteToVars(palette: ThemePalette) {
     "--color-blue-700": hexToRgbTriplet(palette.blue700),
     "--color-line": hexToRgbTriplet(palette.line),
     "--color-elevated": hexToRgbTriplet(palette.elevated),
-    "--color-coral": hexToRgbTriplet(palette.coral),
-    "--color-champagne": hexToRgbTriplet(palette.champagne),
+    "--color-royal": hexToRgbTriplet(palette.royal),
+    "--color-silver": hexToRgbTriplet(palette.silver),
   });
 }
 

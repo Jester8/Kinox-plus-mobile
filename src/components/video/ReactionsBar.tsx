@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Animated, Easing, Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { sendReaction } from "@/services/socket";
 
 const REACTIONS = ["❤️", "😂", "😱", "👏"];
@@ -7,6 +8,7 @@ const REACTIONS = ["❤️", "😂", "😱", "👏"];
 type FloatingEmoji = { id: number; emoji: string; anim: Animated.Value };
 
 export default function ReactionsBar() {
+  const insets = useSafeAreaInsets();
   const [floaters, setFloaters] = useState<FloatingEmoji[]>([]);
   const idRef = useRef(0);
 
@@ -27,17 +29,24 @@ export default function ReactionsBar() {
   };
 
   return (
-    <View className="absolute bottom-24 right-4 items-center">
+    <View className="absolute right-4 items-center" style={{ top: insets.top + 84 }}>
+      <View className="flex-row gap-2 rounded-full bg-black/60 px-3 py-2">
+        {REACTIONS.map((emoji) => (
+          <Pressable key={emoji} onPress={() => burst(emoji)} hitSlop={8}>
+            <Text className="text-xl">{emoji}</Text>
+          </Pressable>
+        ))}
+      </View>
       {floaters.map(({ id, emoji, anim }) => (
         <Animated.Text
           key={id}
           style={{
             position: "absolute",
-            bottom: 56,
+            top: 44,
             fontSize: 28,
             opacity: anim.interpolate({ inputRange: [0, 0.8, 1], outputRange: [1, 1, 0] }),
             transform: [
-              { translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [0, -120] }) },
+              { translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [0, 120] }) },
               { translateX: anim.interpolate({ inputRange: [0, 1], outputRange: [0, (id % 2 === 0 ? 1 : -1) * 20] }) },
             ],
           }}
@@ -45,13 +54,6 @@ export default function ReactionsBar() {
           {emoji}
         </Animated.Text>
       ))}
-      <View className="flex-row gap-2 rounded-full bg-black/60 px-3 py-2">
-        {REACTIONS.map((emoji) => (
-          <Pressable key={emoji} onPress={() => burst(emoji)} hitSlop={6}>
-            <Text className="text-xl">{emoji}</Text>
-          </Pressable>
-        ))}
-      </View>
     </View>
   );
 }

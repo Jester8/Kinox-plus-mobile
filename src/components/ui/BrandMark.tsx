@@ -1,60 +1,46 @@
-import { Image, View } from "react-native";
+import { Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { useThemeStore } from "@/stores/themeStore";
 
 type BrandMarkProps = {
   size?: number;
   showWordmark?: boolean;
 };
 
-// The Sync X — two play triangles (Sunset Coral + Aurora Violet) meeting at
-// center, used for the icon-only lockup. Mirrors web's Logo.tsx SyncMark
-// exactly (same path data from the brand kit) so both apps render the
-// identical mark.
+// The KinoX mark — a single 4-petal shape (a sin(2θ) rose curve) forming an
+// X/butterfly silhouette, solid white on a Cobalt Blue tile. Matches web's
+// Logo.tsx SyncMark exactly (identical path data) so both apps render the
+// same mark.
 function SyncMark({ size }: { size: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 240 240">
       <Path
-        d="M 119.064 6.188 L 112.663 98.259 Q 111.727 111.727 98.259 112.663 L 6.188 119.064 Q -7.279 120.000 2.267 110.454 L 110.454 2.267 Q 120.000 -7.279 119.064 6.188 Z"
-        fill="#FF6B5B"
-      />
-      <Path
-        d="M 233.812 120.936 L 141.741 127.337 Q 128.273 128.273 127.337 141.741 L 120.936 233.812 Q 120.000 247.279 129.546 237.733 L 237.733 129.546 Q 247.279 120.000 233.812 120.936 Z"
-        fill="#7B5CFF"
+        d="M 120.00 120.00 L 126.19 119.82 L 132.35 119.29 L 138.43 118.41 L 144.41 117.19 L 150.25 115.63 L 155.91 113.76 L 161.37 111.58 L 166.60 109.11 L 171.56 106.38 L 176.23 103.41 L 180.58 100.22 L 184.60 96.84 L 188.26 93.29 L 191.54 89.61 L 194.43 85.83 L 196.92 81.98 L 198.99 78.10 L 200.65 74.20 L 201.89 70.34 L 202.70 66.55 L 203.10 62.85 L 203.08 59.28 L 202.65 55.87 L 201.83 52.66 L 200.64 49.67 L 199.07 46.93 L 197.17 44.48 L 194.94 42.33 L 192.41 40.50 L 189.61 39.03 L 186.56 37.93 L 183.30 37.20 L 179.85 36.88 L 176.24 36.96 L 172.51 37.46 L 168.70 38.38 L 164.82 39.72 L 160.93 41.49 L 157.05 43.67 L 153.21 46.26 L 149.46 49.25 L 145.81 52.62 L 142.30 56.37 L 138.96 60.47 L 135.83 64.91 L 132.91 69.65 L 130.25 74.68 L 127.85 79.97 L 125.75 85.48 L 123.95 91.20 L 122.48 97.07 L 121.34 103.08 L 120.54 109.19 L 120.10 115.35 L 120.01 121.55 L 120.28 127.73 L 120.90 133.88 L 121.86 139.94 L 123.17 145.88 L 124.81 151.68 L 126.76 157.30 L 129.01 162.70 L 131.55 167.87 L 134.34 172.76 L 137.37 177.35 L 140.61 181.62 L 144.04 185.55 L 147.62 189.11 L 151.32 192.30 L 155.12 195.09 L 158.99 197.48 L 162.88 199.45 L 166.77 201.00 L 170.61 202.13 L 174.39 202.84 L 178.06 203.13 L 181.59 203.01 L 184.95 202.48 L 188.11 201.57 L 191.04 200.28 L 193.71 198.63 L 196.09 196.64 L 198.16 194.33 L 199.90 191.73 L 201.28 188.87 L 202.29 185.76 L 202.91 182.45 L 203.14 178.96 L 202.95 175.32 L 202.35 171.57 L 201.32 167.73 L 199.88 163.85 L 198.01 159.96 L 195.72 156.09 L 193.03 152.27 L 189.95 148.53 L 186.47 144.92 L 182.64 141.45 L 178.45 138.16 L 173.93 135.07 L 169.11 132.22 L 164.02 129.62 L 158.67 127.30 L 153.10 125.27 L 147.35 123.55 L 141.44 122.16 L 135.40 121.11 L 129.28 120.40 L 123.10 120.04 L 116.90 120.04 L 110.72 120.40 L 104.60 121.11 L 98.56 122.16 L 92.65 123.55 L 86.90 125.27 L 81.33 127.30 L 75.98 129.62 L 70.89 132.22 L 66.07 135.07 L 61.55 138.16 L 57.36 141.45 L 53.53 144.92 L 50.05 148.53 L 46.97 152.27 L 44.28 156.09 L 41.99 159.96 L 40.12 163.85 L 38.68 167.73 L 37.65 171.57 L 37.05 175.32 L 36.86 178.96 L 37.09 182.45 L 37.71 185.76 L 38.72 188.87 L 40.10 191.73 L 41.84 194.33 L 43.91 196.64 L 46.29 198.63 L 48.96 200.28 L 51.89 201.57 L 55.05 202.48 L 58.41 203.01 L 61.94 203.13 L 65.61 202.84 L 69.39 202.13 L 73.23 201.00 L 77.12 199.45 L 81.01 197.48 L 84.88 195.09 L 88.68 192.30 L 92.38 189.11 L 95.96 185.55 L 99.39 181.62 L 102.63 177.35 L 105.66 172.76 L 108.45 167.87 L 110.99 162.70 L 113.24 157.30 L 115.19 151.68 L 116.83 145.88 L 118.14 139.94 L 119.10 133.88 L 119.72 127.73 L 119.99 121.55 L 119.90 115.35 L 119.46 109.19 L 118.66 103.08 L 117.52 97.07 L 116.05 91.20 L 114.25 85.48 L 112.15 79.97 L 109.75 74.68 L 107.09 69.65 L 104.17 64.91 L 101.04 60.47 L 97.70 56.37 L 94.19 52.62 L 90.54 49.25 L 86.79 46.26 L 82.95 43.67 L 79.07 41.49 L 75.18 39.72 L 71.30 38.38 L 67.49 37.46 L 63.76 36.96 L 60.15 36.88 L 56.70 37.20 L 53.44 37.93 L 50.39 39.03 L 47.59 40.50 L 45.06 42.33 L 42.83 44.48 L 40.93 46.93 L 39.36 49.67 L 38.17 52.66 L 37.35 55.87 L 36.92 59.28 L 36.90 62.85 L 37.30 66.55 L 38.11 70.34 L 39.35 74.20 L 41.01 78.10 L 43.08 81.98 L 45.57 85.83 L 48.46 89.61 L 51.74 93.29 L 55.40 96.84 L 59.42 100.22 L 63.77 103.41 L 68.44 106.38 L 73.40 109.11 L 78.63 111.58 L 84.09 113.76 L 89.75 115.63 L 95.59 117.19 L 101.57 118.41 L 107.65 119.29 L 113.81 119.82 L 120.00 120.00 Z"
+        fill="#FFFFFF"
       />
     </Svg>
   );
 }
 
-// Native aspect ratio of the brand kit's horizontal lockup PNGs (2000x743).
-const HORIZONTAL_LOGO_RATIO = 2000 / 743;
-
-// The kit only ships a light-"KINO"-text version (meant for dark surfaces).
-// This dark-text counterpart was rasterized from the kit's own
-// kinox-logo-horizontal-light.svg with its baked-in background stripped, so
-// it stays transparent and works on the light theme's background too.
-const LOGO_LIGHT_TEXT = require("../../../assets/brand/kinox-logo-horizontal.png");
-const LOGO_DARK_TEXT = require("../../../assets/brand/logo-horizontal-dark-text.png");
-
 export default function BrandMark({ size = 40, showWordmark = false }: BrandMarkProps) {
-  const resolvedTheme = useThemeStore((s) => s.resolved);
+  const mark = (
+    <View
+      style={{ width: size, height: size, borderRadius: size * 0.28 }}
+      className="items-center justify-center bg-blue-600"
+    >
+      <SyncMark size={size * 0.72} />
+    </View>
+  );
 
-  if (showWordmark) {
-    return (
-      <Image
-        source={resolvedTheme === "light" ? LOGO_DARK_TEXT : LOGO_LIGHT_TEXT}
-        resizeMode="contain"
-        style={{ height: size, width: size * HORIZONTAL_LOGO_RATIO }}
-      />
-    );
+  if (!showWordmark) {
+    return mark;
   }
 
   return (
-    <View
-      style={{ width: size, height: size, borderRadius: size * 0.28, padding: size * 0.16 }}
-      className="items-center justify-center bg-navy-800"
-    >
-      <SyncMark size={size * 0.68} />
+    <View className="flex-row items-center gap-2">
+      {mark}
+      {/* <Text style={{ fontSize: size * 0.55 }} className="font-['Manrope_800ExtraBold'] tracking-tight text-foreground">
+        kinoX+
+      </Text> */}
     </View>
   );
 }

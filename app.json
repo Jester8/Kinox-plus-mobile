@@ -7,24 +7,34 @@
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "backgroundColor": "#0a0e1a",
-    "primaryColor": "#7b5cff",
+    "backgroundColor": "#0a0a0a",
+    "primaryColor": "#0047ab",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.kinoxplus.mobile",
-      "backgroundColor": "#0a0e1a",
-      "associatedDomains": ["applinks:kinoxplus.app"],
+      "backgroundColor": "#0a0a0a",
+      "associatedDomains": [
+        "applinks:kinoxplus.app",
+        "applinks:kinoxplus.app",
+        "applinks:kinoxplus.app",
+        "applinks:kinoxplus.app"
+      ],
       "infoPlist": {
         "NSCameraUsageDescription": "KinoX Plus uses your camera so friends can see you live in watch party rooms.",
         "NSMicrophoneUsageDescription": "KinoX Plus uses your microphone so friends can hear you live in watch party rooms.",
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio",
+          "audio",
+          "audio",
+          "audio"
+        ]
       }
     },
     "android": {
       "package": "app.kinoxplus.mobile",
       "adaptiveIcon": {
-        "backgroundColor": "#0a0e1a",
+        "backgroundColor": "#0047ab",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -34,9 +44,71 @@
         {
           "action": "VIEW",
           "autoVerify": true,
-          "data": [{ "scheme": "https", "host": "kinoxplus.app", "pathPrefix": "/room" }],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "data": [
+            {
+              "scheme": "https",
+              "host": "kinoxplus.app",
+              "pathPrefix": "/room"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        },
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "kinoxplus.app",
+              "pathPrefix": "/room"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        },
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "kinoxplus.app",
+              "pathPrefix": "/room"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        },
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "kinoxplus.app",
+              "pathPrefix": "/room"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
+      ],
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
     },
     "web": {
@@ -50,7 +122,7 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 160,
           "resizeMode": "contain",
-          "backgroundColor": "#0a0e1a"
+          "backgroundColor": "#0a0a0a"
         }
       ],
       "expo-font",
@@ -72,7 +144,7 @@
         "expo-notifications",
         {
           "icon": "./assets/android-icon-monochrome.png",
-          "color": "#7b5cff"
+          "color": "#0047ab"
         }
       ],
       [
@@ -80,12 +152,20 @@
         {
           "supportsBackgroundPlayback": true
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "extra": {
       "eas": {
-        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+        "projectId": "d737f519-d5fe-444c-b1e8-4ff267e88b77"
       }
+    },
+    "owner": "kinoxplus",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/d737f519-d5fe-444c-b1e8-4ff267e88b77"
     }
   }
 }

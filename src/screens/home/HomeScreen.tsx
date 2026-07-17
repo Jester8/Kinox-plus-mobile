@@ -159,7 +159,7 @@ export default function HomeScreen({ navigation }: Props) {
                       })
                     }
                   >
-                    <Users size={13} color={colors.blue200} /> Create Room
+                    <Users size={13} color={colors.blue300} /> Create Room
                   </Button>
                 </View>
               </View>

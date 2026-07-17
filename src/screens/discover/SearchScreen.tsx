@@ -13,7 +13,7 @@ type Props = NativeStackScreenProps<DiscoverStackParamList, "Search">;
 
 const recentSearches = ["Midnight Signal", "Hangar 9"];
 const trendingQueries = ["Anime watch parties", "Weekend horror picks", "New this week"];
-const TILE_TINTS = ["#7b5cff", "#9478ff", "#6247e0", "#ff6b5b", "#e8c07d"];
+const TILE_TINTS = ["#0047ab", "#0f52ba", "#4169e1", "#007fff", "#3a3a3a"];
 
 export default function SearchScreen({ navigation }: Props) {
   const colors = useThemeColors();

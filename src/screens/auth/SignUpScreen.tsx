@@ -234,10 +234,10 @@ export default function SignUpScreen({ navigation }: Props) {
               <View className="h-9 w-9" />
             )}
           </View>
-
+{/* 
           <View className="items-center px-6 pb-1">
             <BrandMark size={44} showWordmark />
-          </View>
+          </View> */}
 
           <View className="px-6 pt-3">
             <StepIndicator step={step} total={4} labels={STEP_LABELS} />
@@ -378,7 +378,7 @@ export default function SignUpScreen({ navigation }: Props) {
             </View>
 
             <View className="items-center gap-3">
-              <Avatar name={fullName || "K"} size={80} />
+              <Avatar name={fullName || "K"} size={80} color={avatarColor} />
               <View className="flex-row gap-2">
                 {avatarPresets.map((color) => (
                   <Pressable
@@ -426,6 +426,7 @@ export default function SignUpScreen({ navigation }: Props) {
             </View>
             <TextField
               label="Bio (optional)"
+              placeholder="Tell people a bit about yourself…"
               value={bio}
               onChangeText={setBio}
               multiline

@@ -49,6 +49,7 @@ export default function ResetPasswordScreen({ route, navigation }: Props) {
           label="New password"
           icon={Lock}
           secureTextEntry={!showPassword}
+          placeholder="At least 8 characters"
           value={password}
           onChangeText={setPassword}
           rightAccessory={
@@ -61,6 +62,7 @@ export default function ResetPasswordScreen({ route, navigation }: Props) {
           label="Confirm password"
           icon={Lock}
           secureTextEntry={!showPassword}
+          placeholder="Re-enter your password"
           value={confirm}
           onChangeText={setConfirm}
           error={mismatch ? "Passwords don't match" : undefined}

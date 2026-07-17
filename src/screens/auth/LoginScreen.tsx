@@ -90,7 +90,7 @@ export default function LoginScreen({ navigation }: Props) {
 
             <View className="items-center gap-6">
               <BrandMark size={52} showWordmark />
-              <View className="items-center">
+              <View className="w-full">
                 <Text className="text-2xl font-['Manrope_700Bold'] text-foreground">Welcome back</Text>
                 <Text className="mt-1 text-sm text-blue-100/70">Log in to rejoin your rooms.</Text>
               </View>
@@ -106,6 +106,7 @@ export default function LoginScreen({ navigation }: Props) {
                     icon={Mail}
                     autoCapitalize="none"
                     keyboardType="email-address"
+                    placeholder="you@example.com"
                     onChangeText={onChange}
                     onBlur={onBlur}
                     value={value}
@@ -121,6 +122,7 @@ export default function LoginScreen({ navigation }: Props) {
                     label="Password"
                     icon={Lock}
                     secureTextEntry={!showPassword}
+                    placeholder="Enter your password"
                     onChangeText={onChange}
                     onBlur={onBlur}
                     value={value}

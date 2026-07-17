@@ -92,7 +92,7 @@ export type Title = {
   episodes?: { id: string; title: string; runtimeMinutes: number }[];
 };
 
-const posterColors = ["#7b5cff", "#9478ff", "#6247e0", "#ff6b5b", "#e8c07d"];
+const posterColors = ["#0047ab", "#0f52ba", "#4169e1", "#007fff", "#3a3a3a"];
 
 export const titles: Title[] = [
   {
@@ -223,7 +223,7 @@ export const notifications: AppNotification[] = [
   { id: "n4", kind: "system", message: "New feature: reaction bursts are here", timeAgo: "1d", read: true },
 ];
 
-export const avatarPresets = ["#7b5cff", "#ff6b5b", "#e8c07d", "#9478ff", "#6247e0", "#c7bbff"];
+export const avatarPresets = ["#0047ab", "#4169e1", "#0f52ba", "#007fff", "#3a3a3a", "#c0c0c0"];
 
 // Mirrors src/lib/data.ts `faqs` on the web app, per the Help & Support spec.
 export const faqs = [

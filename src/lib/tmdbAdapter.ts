@@ -1,7 +1,7 @@
 import { posterUrl, backdropUrl, type TmdbMovie, type TmdbMovieDetails } from "@/services/tmdb";
 import { TMDB_GENRE_MAP, type Title } from "@/lib/mockData";
 
-const FALLBACK_TINTS = ["#7b5cff", "#9478ff", "#6247e0", "#ff6b5b", "#e8c07d"];
+const FALLBACK_TINTS = ["#0047ab", "#0f52ba", "#4169e1", "#007fff", "#3a3a3a"];
 
 function tintFor(id: number) {
   return FALLBACK_TINTS[id % FALLBACK_TINTS.length];

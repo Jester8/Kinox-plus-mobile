@@ -1,4 +1,5 @@
 import { Modal, Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Check, Moon, Smartphone, Sun, X } from "lucide-react-native";
 import { useThemeColors } from "@/hooks/useThemeColors";
 import { useThemeStore, type ThemePreference } from "@/stores/themeStore";
@@ -16,13 +17,17 @@ const OPTIONS: { value: ThemePreference; label: string; description: string; ico
 
 export default function AppearanceSheet({ visible, onClose }: AppearanceSheetProps) {
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
   const preference = useThemeStore((s) => s.preference);
   const setPreference = useThemeStore((s) => s.setPreference);
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <Pressable onPress={onClose} className="flex-1 justify-end bg-black/60">
-        <Pressable className="gap-2 rounded-t-3xl border border-line/10 bg-navy-950 p-4 pb-8">
+        <Pressable
+          className="gap-2 rounded-t-3xl border border-line/10 bg-navy-950 p-4"
+          style={{ paddingBottom: insets.bottom + 24 }}
+        >
           <View className="mb-1 flex-row items-center justify-between">
             <Text className="text-sm font-['Manrope_600SemiBold'] text-foreground">Appearance</Text>
             <Pressable onPress={onClose} hitSlop={8}>

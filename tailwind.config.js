@@ -34,10 +34,11 @@ module.exports = {
         // opacity suffixes work via Tailwind's <alpha-value>.
         line: "rgb(var(--color-line) / <alpha-value>)",
         elevated: "rgb(var(--color-elevated) / <alpha-value>)",
-        // Brand-invariant signature colors — same hex in both themes, so no
-        // CSS-variable indirection needed (see theme/colors.ts).
-        coral: "#ff6b5b",
-        champagne: "#e8c07d",
+        // Second "X" triangle / premium "Plus" accent — darkened per-theme
+        // for legibility, so these resolve via CSS variables too (see
+        // theme/colors.ts + theme/vars.ts).
+        royal: "rgb(var(--color-royal) / <alpha-value>)",
+        silver: "rgb(var(--color-silver) / <alpha-value>)",
       },
       fontFamily: {
         // Weight-specific PostScript names loaded via @expo-google-fonts/manrope

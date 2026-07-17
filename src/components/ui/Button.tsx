@@ -32,7 +32,7 @@ export default function Button({
     variant === "primary"
       ? "bg-blue-600 active:bg-blue-700"
       : variant === "secondary"
-        ? "border border-blue-500/40 bg-blue-500/10 active:bg-blue-500/20"
+        ? "border border-blue-500/50 bg-blue-500/15 active:bg-blue-500/25"
         : "bg-transparent";
 
   const textClasses =

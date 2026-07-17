@@ -30,10 +30,10 @@ export default function SubscriptionScreen({ navigation }: Props) {
         {plans.map((plan) => {
           const isPlus = plan.name === "Plus";
           return (
-            <Card key={plan.name} className={isPlus ? "border-champagne/50" : undefined}>
+            <Card key={plan.name} className={isPlus ? "border-silver/50" : undefined}>
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center gap-2">
-                  {isPlus && <Crown size={16} color={colors.champagne} />}
+                  {isPlus && <Crown size={16} color={colors.silver} />}
                   <Text className="text-lg font-['Manrope_700Bold'] text-foreground">{plan.name}</Text>
                 </View>
                 {plan.name === "Free" && <Badge tone="neutral">Current Plan</Badge>}

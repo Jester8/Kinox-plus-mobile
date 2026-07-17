@@ -50,7 +50,7 @@ export default function EditProfileScreen({ navigation }: Props) {
 
       <ScrollView contentContainerClassName="gap-6 py-6" keyboardShouldPersistTaps="handled">
         <View className="items-center gap-3">
-          <Avatar name={displayName || "You"} size={80} />
+          <Avatar name={displayName || "You"} size={80} color={avatarColor} />
           <View className="flex-row gap-2">
             {avatarPresets.map((color) => (
               <Pressable
@@ -69,9 +69,15 @@ export default function EditProfileScreen({ navigation }: Props) {
 
         <View className="gap-4">
           <TextField label="Username" value={profile?.username ?? ""} editable={false} />
-          <TextField label="Display name" value={displayName} onChangeText={setDisplayName} />
+          <TextField
+            label="Display name"
+            placeholder="Your name"
+            value={displayName}
+            onChangeText={setDisplayName}
+          />
           <TextField
             label="Bio"
+            placeholder="Tell people a bit about yourself…"
             value={bio}
             onChangeText={setBio}
             multiline

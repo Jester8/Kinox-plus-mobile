@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Check, X } from "lucide-react-native";
-import { darkColors as colors } from "@/theme/colors";
+import { useThemeColors } from "@/hooks/useThemeColors";
 import { usePlayerStore } from "@/stores/playerStore";
 
 type QualitySheetProps = {
@@ -15,13 +16,18 @@ const QUALITY_OPTIONS = [
 ] as const;
 
 export default function QualitySheet({ onClose }: QualitySheetProps) {
+  const insets = useSafeAreaInsets();
+  const colors = useThemeColors();
   const quality = usePlayerStore((s) => s.quality);
   const setQuality = usePlayerStore((s) => s.setQuality);
 
   return (
-    <View className="absolute inset-x-0 bottom-0 gap-2 rounded-t-3xl border border-white/10 bg-navy-950 p-4">
+    <View
+      className="absolute inset-x-0 bottom-0 gap-2 rounded-t-3xl border border-line/10 bg-navy-950 p-4"
+      style={{ paddingBottom: insets.bottom + 16 }}
+    >
       <View className="mb-1 flex-row items-center justify-between">
-        <Text className="text-sm font-['Manrope_600SemiBold'] text-white">Playback quality</Text>
+        <Text className="text-sm font-['Manrope_600SemiBold'] text-foreground">Playback quality</Text>
         <Pressable onPress={onClose} hitSlop={8}>
           <X size={18} color={colors.blue300} />
         </Pressable>
@@ -39,7 +45,7 @@ export default function QualitySheet({ onClose }: QualitySheetProps) {
             className={`flex-row items-center justify-between rounded-xl px-3 py-3 ${active ? "bg-blue-500/15" : ""}`}
           >
             <View>
-              <Text className={`text-sm font-['Manrope_500Medium'] ${active ? "text-blue-200" : "text-white/85"}`}>
+              <Text className={`text-sm font-['Manrope_500Medium'] ${active ? "text-blue-200" : "text-foreground/85"}`}>
                 {option.label}
               </Text>
               <Text className="text-xs text-blue-100/50">{option.description}</Text>

@@ -1,10 +1,9 @@
 import "./src/theme/global.css";
 import "react-native-gesture-handler";
-import { useCallback, useEffect } from "react";
-import { Text, TextInput } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, useNavigationContainerRef } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as ScreenOrientation from "expo-screen-orientation";
 import * as SplashScreen from "expo-splash-screen";
@@ -23,6 +22,8 @@ import ThemeProvider from "@/components/ThemeProvider";
 import { linking } from "@/lib/deepLinking";
 import { fetchTrendingMovies, fetchPopularMovies } from "@/services/tmdb";
 import { tmdbMovieToTitle } from "@/lib/tmdbAdapter";
+import { useSessionStore } from "@/stores/sessionStore";
+import type { RootStackParamList } from "@/navigation/types";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,18 +52,52 @@ queryClient.prefetchQuery({
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
-// React Native has no font-weight matching for custom (non-system) fonts —
-// each Manrope weight is its own registered family, so classNames like
-// font-bold reference "Manrope_700Bold" directly (see tailwind.config.js /
-// the font-* utility usages across screens). This default just covers every
-// Text/TextInput that doesn't set an explicit weight utility.
-// @ts-expect-error — defaultProps isn't in RN's public Text typings but is
-// still honored at runtime; this is the standard way to set an app-wide font.
-Text.defaultProps = { ...(Text.defaultProps ?? {}), style: [{ fontFamily: "Manrope_400Regular" }, Text.defaultProps?.style] };
-// @ts-expect-error — see above.
-TextInput.defaultProps = { ...(TextInput.defaultProps ?? {}), style: [{ fontFamily: "Manrope_400Regular" }, TextInput.defaultProps?.style] };
+// Logging out (from Settings, or automatically when a refresh token expires
+// inside services/api.ts) only ever clears the session store — nothing else
+// was watching for that and moving the user off whatever protected screen
+// they were on, so "sign out" looked like it did nothing. This resets the
+// whole nav stack back to Login the moment an active session disappears.
+//
+// The reverse direction matters too: after that sign-out reset, Login's own
+// screen-level navigate() only pushes "Main" on top of "Auth" rather than
+// replacing it, so a logout followed by logging back in left a stale Login
+// screen underneath in the back-stack (and depended on timing that could
+// race with the async token/profile save). Tracking justSignedOut lets this
+// same effect force a clean reset straight to Home the moment a login
+// completes — but only for that post-logout case, not a normal cold-start
+// bootstrap login, which Splash already routes more carefully (onboarding
+// vs. Home) on its own.
+function useSessionRedirect(navigationRef: ReturnType<typeof useNavigationContainerRef<RootStackParamList>>) {
+  const accessToken = useSessionStore((s) => s.accessToken);
+  const hadSession = useRef(false);
+  const justSignedOut = useRef(false);
+
+  useEffect(() => {
+    if (accessToken) {
+      if (justSignedOut.current) {
+        justSignedOut.current = false;
+        navigationRef.current?.reset({
+          index: 0,
+          routes: [{ name: "Main", params: { screen: "HomeTab", params: { screen: "Home" } } }],
+        });
+      }
+      hadSession.current = true;
+      return;
+    }
+    if (!hadSession.current) return;
+    hadSession.current = false;
+    justSignedOut.current = true;
+    navigationRef.current?.reset({
+      index: 0,
+      routes: [{ name: "Auth", params: { screen: "Login" } }],
+    });
+  }, [accessToken, navigationRef]);
+}
 
 export default function App() {
+  const navigationRef = useNavigationContainerRef<RootStackParamList>();
+  useSessionRedirect(navigationRef);
+
   const [fontsLoaded, fontError] = useFonts({
     Manrope_400Regular,
     Manrope_500Medium,
@@ -70,6 +105,19 @@ export default function App() {
     Manrope_700Bold,
     Manrope_800ExtraBold,
   });
+  // useFonts hanging (seen intermittently on some Android devices) would
+  // otherwise leave the native splash on screen forever, since nothing else
+  // ever flips fontsLoaded/fontError — this timeout guarantees the app
+  // renders (falling back to system fonts if they truly never load) instead
+  // of blocking startup indefinitely.
+  const [fontsTimedOut, setFontsTimedOut] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setFontsTimedOut(true), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const ready = fontsLoaded || fontError || fontsTimedOut;
 
   useEffect(() => {
     // The app is portrait-first everywhere except the Player screen's
@@ -80,12 +128,12 @@ export default function App() {
   }, []);
 
   const onLayoutRootView = useCallback(() => {
-    if (fontsLoaded || fontError) {
+    if (ready) {
       SplashScreen.hideAsync().catch(() => undefined);
     }
-  }, [fontsLoaded, fontError]);
+  }, [ready]);
 
-  if (!fontsLoaded && !fontError) {
+  if (!ready) {
     return null;
   }
 
@@ -95,7 +143,7 @@ export default function App() {
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
             <OfflineBanner />
-            <NavigationContainer linking={linking}>
+            <NavigationContainer ref={navigationRef} linking={linking}>
               <RootNavigator />
             </NavigationContainer>
           </ThemeProvider>

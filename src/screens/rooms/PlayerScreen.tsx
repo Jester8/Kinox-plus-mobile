@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Pressable, Text, View, useWindowDimensions } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useVideoPlayer, VideoView } from "expo-video";
@@ -23,7 +23,7 @@ import ChatDrawer from "@/components/video/ChatDrawer";
 import ParticipantsSheet from "@/components/video/ParticipantsSheet";
 import QualitySheet from "@/components/video/QualitySheet";
 import Badge from "@/components/ui/Badge";
-import { darkColors as colors } from "@/theme/colors";
+import { useThemeColors } from "@/hooks/useThemeColors";
 import { titles } from "@/lib/mockData";
 import { isTmdbId } from "@/lib/tmdbAdapter";
 import { useMovieDetails } from "@/hooks/useTmdb";
@@ -58,6 +58,8 @@ const SWIPE_DISMISS_VELOCITY = 800;
 export default function PlayerScreen({ route, navigation }: Props) {
   const { roomId, titleId, solo } = route.params;
   const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const colors = useThemeColors();
   const isHost = useRoomStore((s) => s.isHost);
   const participants = useRoomStore((s) => s.participants);
   const upsertParticipant = useRoomStore((s) => s.upsertParticipant);
@@ -198,13 +200,14 @@ export default function PlayerScreen({ route, navigation }: Props) {
             participants.map((participant, i) => {
               const columns = width < 380 ? 2 : 3;
               const bubbleSize = Math.min(84, width / columns - 24);
+              const headerHeight = insets.top + 76;
               return (
                 <FaceBubble
                   key={participant.id}
                   participant={participant}
                   size={bubbleSize}
                   initialX={16 + (i % columns) * (bubbleSize + 12)}
-                  initialY={80 + Math.floor(i / columns) * (bubbleSize + 12)}
+                  initialY={headerHeight + Math.floor(i / columns) * (bubbleSize + 12)}
                   onTogglePin={(id) =>
                     upsertParticipant({ ...participant, isPinned: participant.id === id ? !participant.isPinned : false })
                   }
@@ -214,10 +217,11 @@ export default function PlayerScreen({ route, navigation }: Props) {
 
           {!isFullscreen && (
             <SafeAreaView edges={["top"]} className="absolute inset-x-0 top-0" pointerEvents="box-none">
-              <View className="flex-row items-center justify-between px-4 py-2">
+              <View className="flex-row items-center justify-between gap-2 px-5 py-2">
                 <Pressable
                   onPress={exitPlayer}
-                  className="h-9 w-9 items-center justify-center rounded-full bg-black/50"
+                  hitSlop={8}
+                  className="h-10 w-10 items-center justify-center rounded-full bg-black/50"
                 >
                   <ChevronDown size={20} color="#fff" />
                 </Pressable>
@@ -225,7 +229,8 @@ export default function PlayerScreen({ route, navigation }: Props) {
                 <View className="flex-row gap-2">
                   <Pressable
                     onPress={() => setInfoOpen(true)}
-                    className="h-9 w-9 items-center justify-center rounded-full bg-black/50"
+                    hitSlop={8}
+                    className="h-10 w-10 items-center justify-center rounded-full bg-black/50"
                   >
                     <Info size={16} color="#fff" />
                   </Pressable>
@@ -233,13 +238,15 @@ export default function PlayerScreen({ route, navigation }: Props) {
                     <>
                       <Pressable
                         onPress={() => setParticipantsOpen(true)}
-                        className="h-9 w-9 items-center justify-center rounded-full bg-black/50"
+                        hitSlop={8}
+                        className="h-10 w-10 items-center justify-center rounded-full bg-black/50"
                       >
                         <Users size={16} color="#fff" />
                       </Pressable>
                       <Pressable
                         onPress={() => setChatOpen(true)}
-                        className="h-9 w-9 items-center justify-center rounded-full bg-black/50"
+                        hitSlop={8}
+                        className="h-10 w-10 items-center justify-center rounded-full bg-black/50"
                       >
                         <MessageSquare size={16} color="#fff" />
                       </Pressable>
@@ -247,7 +254,7 @@ export default function PlayerScreen({ route, navigation }: Props) {
                   )}
                 </View>
               </View>
-              <Text className="px-4 text-xs text-white/60">{displayTitle.name}</Text>
+              <Text className="px-5 text-xs text-white/60">{displayTitle.name}</Text>
             </SafeAreaView>
           )}
 
@@ -256,12 +263,12 @@ export default function PlayerScreen({ route, navigation }: Props) {
           {infoOpen && (
             <Pressable
               onPress={() => setInfoOpen(false)}
-              className="absolute inset-0 items-end bg-black/60 p-4"
-              style={{ justifyContent: "flex-start", paddingTop: 60 }}
+              className="absolute inset-0 items-end bg-black/60 px-5"
+              style={{ justifyContent: "flex-start", paddingTop: insets.top + 84 }}
             >
-              <Pressable className="w-full gap-3 rounded-2xl border border-white/10 bg-navy-950 p-5">
+              <Pressable className="w-full gap-3 rounded-2xl border border-line/10 bg-navy-950 p-5">
                 <View className="flex-row items-start justify-between">
-                  <Text className="flex-1 pr-3 text-lg font-['Manrope_700Bold'] text-white">{displayTitle.name}</Text>
+                  <Text className="flex-1 pr-3 text-lg font-['Manrope_700Bold'] text-foreground">{displayTitle.name}</Text>
                   <Pressable onPress={() => setInfoOpen(false)} hitSlop={8}>
                     <X size={18} color={colors.blue300} />
                   </Pressable>
@@ -282,7 +289,7 @@ export default function PlayerScreen({ route, navigation }: Props) {
             </Pressable>
           )}
 
-          <View className="absolute inset-x-0 bottom-0">
+          <View className="absolute inset-x-0 bottom-0" style={{ paddingBottom: insets.bottom }}>
             <PlayerControls
               isHost={solo ? true : isHost}
               onSeek={(seconds) => {

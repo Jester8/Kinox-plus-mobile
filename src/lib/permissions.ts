@@ -1,6 +1,5 @@
 import { Camera } from "expo-camera";
 import { requestRecordingPermissionsAsync } from "expo-audio";
-import * as Notifications from "expo-notifications";
 
 // Camera/mic/notification permissions are primed inside onboarding (with
 // in-app context explaining *why*) rather than on first room join — never a
@@ -15,9 +14,19 @@ export async function requestMicrophonePermission() {
   return status === "granted";
 }
 
+// expo-notifications' Android remote-push functionality was pulled from
+// Expo Go entirely as of SDK 53 — even just importing the module can throw
+// there. Loaded lazily (only when this is actually called) and guarded so
+// Expo Go on Android degrades to "not granted" instead of crashing the app;
+// a real dev/production build still gets the real permission prompt.
 export async function requestNotificationPermission() {
-  const { status } = await Notifications.requestPermissionsAsync();
-  return status === "granted";
+  try {
+    const Notifications = await import("expo-notifications");
+    const { status } = await Notifications.requestPermissionsAsync();
+    return status === "granted";
+  } catch {
+    return false;
+  }
 }
 
 export async function requestAllOnboardingPermissions() {

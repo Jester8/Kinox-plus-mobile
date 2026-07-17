@@ -125,18 +125,19 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 
   logOut: async () => {
     const { refreshToken } = get();
-    // Best-effort — revoking the server-side session shouldn't block a local
-    // logout if the network is down or the token's already expired.
-    if (refreshToken) await apiLogout(refreshToken).catch(() => undefined);
+    // Clear local state first — revoking the server-side session is
+    // best-effort and must never block the UI on a slow/cold/offline
+    // backend (Render's free tier can take 30s+ to wake from sleep).
     await storage.removeItem(ACCESS_TOKEN_KEY).catch(() => undefined);
     await storage.removeItem(REFRESH_TOKEN_KEY).catch(() => undefined);
     set({ accessToken: null, refreshToken: null, profile: null });
+    if (refreshToken) apiLogout(refreshToken).catch(() => undefined);
   },
 
   logOutAllDevices: async () => {
-    await apiLogoutAll().catch(() => undefined);
     await storage.removeItem(ACCESS_TOKEN_KEY).catch(() => undefined);
     await storage.removeItem(REFRESH_TOKEN_KEY).catch(() => undefined);
     set({ accessToken: null, refreshToken: null, profile: null });
+    apiLogoutAll().catch(() => undefined);
   },
 }));

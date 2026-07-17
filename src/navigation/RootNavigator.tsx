@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import SplashScreen from "@/screens/splash/SplashScreen";
+import IntroScreen from "@/screens/intro/IntroScreen";
 import OnboardingCarouselScreen from "@/screens/onboarding/OnboardingCarouselScreen";
 import AuthNavigator from "./AuthNavigator";
 import AccountSetupNavigator from "./AccountSetupNavigator";
@@ -20,6 +21,7 @@ export default function RootNavigator() {
   return (
     <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Splash" component={SplashScreen} />
+      <Stack.Screen name="Intro" component={IntroScreen} />
       <Stack.Screen name="OnboardingCarousel" component={OnboardingCarouselScreen} />
       <Stack.Screen name="Auth" component={AuthNavigator} />
       <Stack.Screen name="AccountSetup" component={AccountSetupNavigator} />

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { FlatList, Modal, Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChevronLeft, ChevronRight, X } from "lucide-react-native";
 import { useThemeColors } from "@/hooks/useThemeColors";
 import Button from "./Button";
@@ -36,6 +37,7 @@ export default function DateOfBirthPicker({
   minAge = 13,
 }: DateOfBirthPickerProps) {
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
   const today = new Date();
   const maxDate = useMemo(() => new Date(today.getFullYear() - minAge, today.getMonth(), today.getDate()), []);
   const [cursor, setCursor] = useState(value ?? maxDate);
@@ -69,7 +71,10 @@ export default function DateOfBirthPicker({
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View className="flex-1 justify-end bg-black/60">
-        <View className="gap-5 rounded-t-3xl border border-line/10 bg-navy-950 p-6 pb-10">
+        <View
+          className="gap-5 rounded-t-3xl border border-line/10 bg-navy-950 p-6"
+          style={{ paddingBottom: insets.bottom + 24 }}
+        >
           <View className="flex-row items-center justify-between">
             <Text className="text-lg font-['Manrope_700Bold'] text-foreground">Date of birth</Text>
             <Pressable onPress={onClose} hitSlop={8}>

@@ -22,8 +22,8 @@ const TextField = forwardRef<TextInput, TextFieldProps>(
           {Icon && <Icon size={18} color={colors.blue300} />}
           <TextInput
             ref={ref}
-            placeholderTextColor="rgba(226,233,251,0.35)"
-            className={`flex-1 py-3 text-base text-foreground ${className ?? ""}`}
+            placeholderTextColor={colors.foreground + "59"}
+            className={`flex-1 py-3 text-base text-line ${className ?? ""}`}
             style={style}
             selectionColor={colors.blue400}
             {...props}

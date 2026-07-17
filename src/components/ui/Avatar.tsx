@@ -6,6 +6,7 @@ type AvatarProps = {
   name: string;
   size?: number;
   ring?: boolean;
+  color?: string | null;
 };
 
 function initials(name: string) {
@@ -17,7 +18,7 @@ function initials(name: string) {
     .join("");
 }
 
-function Avatar({ uri, name, size = 40, ring = false }: AvatarProps) {
+function Avatar({ uri, name, size = 40, ring = false, color }: AvatarProps) {
   const dimension = { width: size, height: size, borderRadius: size / 2 };
 
   if (uri) {
@@ -32,8 +33,8 @@ function Avatar({ uri, name, size = 40, ring = false }: AvatarProps) {
 
   return (
     <View
-      style={dimension}
-      className={`items-center justify-center bg-blue-700 ${ring ? "border-2 border-blue-400" : ""}`}
+      style={[dimension, color ? { backgroundColor: color } : undefined]}
+      className={`items-center justify-center ${color ? "" : "bg-blue-700"} ${ring ? "border-2 border-blue-400" : ""}`}
     >
       <Text style={{ fontSize: size * 0.4 }} className="font-['Manrope_600SemiBold'] text-white">
         {initials(name)}

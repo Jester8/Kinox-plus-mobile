@@ -39,7 +39,7 @@ export default function ProfileScreen({ navigation }: Props) {
         </View>
 
         <View className="items-center gap-3">
-          <Avatar name={profile?.displayName ?? "You"} size={88} />
+          <Avatar name={profile?.displayName ?? "You"} size={88} color={profile?.avatarColor} />
           <View className="items-center">
             <Text className="text-lg font-['Manrope_700Bold'] text-foreground">{profile?.displayName ?? "Your Name"}</Text>
             <Text className="text-sm text-blue-100/60">@{profile?.username ?? "username"}</Text>

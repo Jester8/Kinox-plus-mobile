@@ -6,15 +6,31 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "channel": "development",
+      "env": {
+        "EXPO_PUBLIC_TMDB_ACCESS_TOKEN": "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlOTQzYTJmYWY1YjJmMDY0NDM2NjM0MmIyYjc1OTg3MiIsIm5iZiI6MTc4NDA0MDQ5OS4zNTAwMDAxLCJzdWIiOiI2YTU2NGMzMzVhYTNiODNjYTQ3NjhiMGQiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.12wn1EJ5pKMm3vS-_BTJSv1XKCjsz5zHiqZlHvDLdJs",
+        "EXPO_PUBLIC_API_URL": "https://kinoxplus.onrender.com"
+      }
     },
     "preview": {
       "distribution": "internal",
-      "channel": "preview"
+      "channel": "preview",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_TMDB_ACCESS_TOKEN": "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlOTQzYTJmYWY1YjJmMDY0NDM2NjM0MmIyYjc1OTg3MiIsIm5iZiI6MTc4NDA0MDQ5OS4zNTAwMDAxLCJzdWIiOiI2YTU2NGMzMzVhYTNiODNjYTQ3NjhiMGQiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.12wn1EJ5pKMm3vS-_BTJSv1XKCjsz5zHiqZlHvDLdJs",
+        "EXPO_PUBLIC_API_URL": "https://kinoxplus.onrender.com"
+      }
     },
     "production": {
       "channel": "production",
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_TMDB_ACCESS_TOKEN": "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlOTQzYTJmYWY1YjJmMDY0NDM2NjM0MmIyYjc1OTg3MiIsIm5iZiI6MTc4NDA0MDQ5OS4zNTAwMDAxLCJzdWIiOiI2YTU2NGMzMzVhYTNiODNjYTQ3NjhiMGQiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.12wn1EJ5pKMm3vS-_BTJSv1XKCjsz5zHiqZlHvDLdJs",
+        "EXPO_PUBLIC_API_URL": "https://kinoxplus.onrender.com"
+      }
     }
   },
   "submit": {

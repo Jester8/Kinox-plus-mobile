@@ -36,7 +36,7 @@ export default function PlayerControls({ isHost, onSeek, onOpenSettings }: Playe
   const toggleFullscreen = usePlayerStore((s) => s.toggleFullscreen);
 
   return (
-    <View className="gap-2 bg-black/60 px-4 pb-3 pt-2">
+    <View className="gap-2 bg-black/60 px-5 pb-3 pt-2">
       <View className="flex-row items-center gap-2">
         <Text className="w-10 text-xs text-white/70">{formatTime(position)}</Text>
         <ScrubBar value={position} max={duration} disabled={!isHost} onChangeComplete={onSeek} />
