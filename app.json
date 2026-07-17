@@ -1,0 +1,91 @@
+{
+  "expo": {
+    "name": "KinoX Plus",
+    "slug": "kinox-plus",
+    "scheme": "kinoxplus",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0a0e1a",
+    "primaryColor": "#7b5cff",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.kinoxplus.mobile",
+      "backgroundColor": "#0a0e1a",
+      "associatedDomains": ["applinks:kinoxplus.app"],
+      "infoPlist": {
+        "NSCameraUsageDescription": "KinoX Plus uses your camera so friends can see you live in watch party rooms.",
+        "NSMicrophoneUsageDescription": "KinoX Plus uses your microphone so friends can hear you live in watch party rooms.",
+        "UIBackgroundModes": ["audio"]
+      }
+    },
+    "android": {
+      "package": "app.kinoxplus.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#0a0e1a",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [{ "scheme": "https", "host": "kinoxplus.app", "pathPrefix": "/room" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "resizeMode": "contain",
+          "backgroundColor": "#0a0e1a"
+        }
+      ],
+      "expo-font",
+      "expo-web-browser",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "KinoX Plus uses your camera so friends can see you live in watch party rooms.",
+          "microphonePermission": "KinoX Plus uses your microphone so friends can hear you live in watch party rooms."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "KinoX Plus uses your microphone so friends can hear you live in watch party rooms."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#7b5cff"
+        }
+      ],
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": true
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+      }
+    }
+  }
+}
