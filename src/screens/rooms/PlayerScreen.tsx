@@ -1,320 +1,607 @@
-import { useEffect, useState } from "react";
-import { Pressable, Text, View, useWindowDimensions } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
-import * as ScreenOrientation from "expo-screen-orientation";
+import React, { useState, useRef, useCallback, useEffect } from "react";
+import { 
+  View, 
+  Text, 
+  ActivityIndicator, 
+  StyleSheet, 
+  Pressable,
+  Animated,
+  StatusBar,
+} from "react-native";
+import { useRoute, useNavigation } from "@react-navigation/native";
 import { useVideoPlayer, VideoView } from "expo-video";
-import { useEvent } from "expo";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, {
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
-import { ChevronDown, Clock, Info, MessageSquare, Users, X } from "lucide-react-native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import FaceBubble from "@/components/video/FaceBubble";
-import PlayerControls from "@/components/video/PlayerControls";
-import SyncIndicator from "@/components/video/SyncIndicator";
-import ReactionsBar from "@/components/video/ReactionsBar";
+import { useEventListener } from "expo";
+import { 
+  MessageCircle, 
+  Smile,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Maximize,
+  RotateCcw,
+  RotateCw,
+  ChevronDown,
+  MoreVertical,
+  CreditCard,
+  AlertTriangle,
+  WifiOff,
+} from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import ChatDrawer from "@/components/video/ChatDrawer";
-import ParticipantsSheet from "@/components/video/ParticipantsSheet";
-import QualitySheet from "@/components/video/QualitySheet";
-import Badge from "@/components/ui/Badge";
-import { useThemeColors } from "@/hooks/useThemeColors";
-import { titles } from "@/lib/mockData";
-import { isTmdbId } from "@/lib/tmdbAdapter";
-import { useMovieDetails } from "@/hooks/useTmdb";
-import { useRoomStore } from "@/stores/roomStore";
-import { usePlayerStore } from "@/stores/playerStore";
-import { connectSocket, disconnectSocket } from "@/services/socket";
-import type { RootStackParamList } from "@/navigation/types";
+import ScrubBar from "@/components/ui/ScrubBar";
+import { usePlayback } from "@/hooks/UsePlayback";
+import type { ApiError } from "@/services/api";
 
-type Props = NativeStackScreenProps<RootStackParamList, "Player">;
-
-// TODO: replace with the real per-room manifest URL once transcoding is wired up.
-// Apple's public BipBop HLS test stream — native AVPlayer/ExoPlayer handle
-// it directly, bypassing the browser fetch/CORS/content-decoding quirks
-// that can trip up a web preview.
-const SAMPLE_HLS_URL = "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8";
-
-// Shown whenever there's no real title to describe (e.g. opening the Player
-// directly during testing) so the info panel never renders empty.
-const DUMMY_TITLE = {
-  name: "Midnight Signal",
-  genre: "Sci-Fi",
-  year: 2025,
-  rating: "PG-13",
-  runtimeMinutes: 118,
-  synopsis:
-    "A late-night radio host starts receiving broadcasts from a future that hasn't happened yet.",
+type RouteParams = {
+  titleId?: string;
+  title?: string;
+  season?: number;
+  episode?: number;
+  id?: string;
+  slug?: string;
+  solo?: boolean;
+  roomId?: string;
+  trailerUrl?: string;
+  name?: string;
 };
 
-const SWIPE_DISMISS_DISTANCE = 120;
-const SWIPE_DISMISS_VELOCITY = 800;
+// Error code constants matching the backend response envelope
+const ERR_SUBSCRIPTION_REQUIRED = "SUBSCRIPTION_REQUIRED";
+const ERR_TITLE_NOT_PLAYABLE = "TITLE_NOT_PLAYABLE";
+const ERR_CLOUDFLARE_STREAM_ERROR = "CLOUDFLARE_STREAM_ERROR";
+const ERR_CLOUDFLARE_UNCONFIGURED = "CLOUDFLARE_STREAM_UNCONFIGURED";
 
-export default function PlayerScreen({ route, navigation }: Props) {
-  const { roomId, titleId, solo } = route.params;
-  const { width, height } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
-  const colors = useThemeColors();
-  const isHost = useRoomStore((s) => s.isHost);
-  const participants = useRoomStore((s) => s.participants);
-  const upsertParticipant = useRoomStore((s) => s.upsertParticipant);
-  const leaveRoom = useRoomStore((s) => s.leaveRoom);
-  const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const playbackRate = usePlayerStore((s) => s.playbackRate);
-  const isFullscreen = usePlayerStore((s) => s.isFullscreen);
-  const setPosition = usePlayerStore((s) => s.setPosition);
-  const setDuration = usePlayerStore((s) => s.setDuration);
-  const setPlaying = usePlayerStore((s) => s.setPlaying);
-  const resetPlayer = usePlayerStore((s) => s.reset);
+// Match score helper
+function matchScoreFor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  return 85 + (hash % 15);
+}
 
-  const isTmdb = titleId ? isTmdbId(titleId) : false;
-  const tmdbTitle = useMovieDetails(isTmdb ? Number(titleId) : null).data;
-  const mockTitle = titleId && !isTmdb ? titles.find((t) => t.id === titleId) : undefined;
-  const displayTitle = tmdbTitle ?? mockTitle ?? DUMMY_TITLE;
+function formatTime(seconds: number) {
+  if (!seconds || !isFinite(seconds)) return "0:00";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
 
-  const [chatOpen, setChatOpen] = useState(false);
-  const [participantsOpen, setParticipantsOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  // Shown by default so the movie's details are visible the moment the
-  // player opens, rather than requiring the viewer to discover the "i" button.
-  const [infoOpen, setInfoOpen] = useState(true);
+// Reaction emojis
+const REACTION_EMOJIS = ["❤️", "😂", "🤣", "🔥", "👍", "🎉", "😍", "🤩", "😎", "💀", "🙌", "🥳", "😱", "💯", "✨", "🚀", "👏", "💪"];
 
-  const player = useVideoPlayer(SAMPLE_HLS_URL, (p) => {
-    p.play();
+export default function PlayerScreen() {
+  const route = useRoute();
+  const navigation = useNavigation<any>();
+  
+  const params = (route?.params || {}) as RouteParams;
+  
+  // Extract title info from params
+  const titleName = params?.name || params?.title || "Now Playing";
+  const titleId = params?.titleId || params?.id || "";
+  
+  // Fetch the real playback URL from the catalog API
+  const { data: playbackData, isLoading: playbackLoading, error: playbackError, refetch: retryPlayback } = usePlayback(titleId || null);
+  
+  const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
+  const [playbackErrorCode, setPlaybackErrorCode] = useState<string | null>(null);
+  
+  // Process playback response
+  useEffect(() => {
+    if (playbackData && playbackData.url) {
+      setPlaybackUrl(playbackData.url);
+      setPlaybackErrorCode(null);
+    }
+  }, [playbackData]);
+
+  // Handle playback error codes for proper UX
+  useEffect(() => {
+    if (playbackError) {
+      const apiErr = playbackError as ApiError;
+      if (apiErr.status === 403) {
+        setPlaybackErrorCode(ERR_SUBSCRIPTION_REQUIRED);
+      } else if (apiErr.status === 404) {
+        setPlaybackErrorCode(ERR_TITLE_NOT_PLAYABLE);
+      } else if (apiErr.status === 502) {
+        setPlaybackErrorCode(ERR_CLOUDFLARE_STREAM_ERROR);
+      } else if (apiErr.status === 503) {
+        setPlaybackErrorCode(ERR_CLOUDFLARE_UNCONFIGURED);
+      } else {
+        setPlaybackErrorCode("UNKNOWN");
+      }
+    }
+  }, [playbackError]);
+
+  // Create the video player with a placeholder source initially.
+  // Once the real playback URL is fetched, player.replace() updates it.
+  const player = useVideoPlayer(
+    playbackUrl ? { uri: playbackUrl } : { uri: "https://example.com/placeholder.mp4" },
+    (p) => {
+      if (playbackUrl) {
+        p.volume = 1;
+        p.play();
+      }
+    },
+  );
+
+  // Update player source when playbackUrl changes
+  useEffect(() => {
+    if (playbackUrl && player) {
+      player.replace(playbackUrl);
+      player.play();
+    }
+  }, [playbackUrl, player]);
+  
+  // UI State
+  const [error, setError] = useState<string | null>(null);
+  
+  // Playback tracking state
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
+  
+  // Chat & Reaction state
+  const [showChat, setShowChat] = useState(false);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  
+  // Controls overlay visibility
+  const [controlsVisible, setControlsVisible] = useState(true);
+  const controlsOpacity = useRef(new Animated.Value(1)).current;
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  // Listen for player status changes
+  useEventListener(player, "statusChange", ({ status, error: playerError }) => {
+    if (status === "readyToPlay") {
+      setError(null);
+      // Set duration when video is ready
+      if (player.duration) {
+        setDuration(player.duration);
+      }
+    } else if (status === "error") {
+      setError(playerError?.message || "Failed to load video");
+    }
   });
 
-  const { currentTime } = useEvent(player, "timeUpdate", {
-    currentTime: player.currentTime,
-    currentLiveTimestamp: null,
-    currentOffsetFromLive: null,
-    bufferedPosition: 0,
+  // Listen for time updates to track current position
+  useEventListener(player, "timeUpdate", ({ currentTime: time }) => {
+    setCurrentTime(time);
+    // Also update duration in case it becomes available later
+    if (player.duration && player.duration !== duration) {
+      setDuration(player.duration);
+    }
   });
 
-  useEffect(() => {
-    setPosition(currentTime);
-    setDuration(player.duration);
-  }, [currentTime, player, setPosition, setDuration]);
+  // Listen for muted state changes
+  useEventListener(player, "mutedChange", ({ muted }) => {
+    setIsMuted(muted);
+  });
 
-  useEffect(() => {
-    if (isPlaying) player.play();
-    else player.pause();
-  }, [isPlaying, player]);
+  // Listen for playing state changes
+  useEventListener(player, "playingChange", ({ isPlaying: playing }) => {
+    setIsPlaying(playing);
+  });
 
-  useEffect(() => {
-    player.playbackRate = playbackRate;
-  }, [playbackRate, player]);
+  // Auto-hide controls after 5 seconds
+  const showControlsTemporarily = useCallback(() => {
+    setControlsVisible(true);
+    Animated.timing(controlsOpacity, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
 
-  // Fullscreen rotates to landscape (matching how every video app's
-  // fullscreen button behaves) and restores portrait on exit or unmount —
-  // requires app.json's orientation to be "default" rather than locked, see App.tsx.
-  useEffect(() => {
-    const lock = isFullscreen
-      ? ScreenOrientation.OrientationLock.LANDSCAPE
-      : ScreenOrientation.OrientationLock.PORTRAIT_UP;
-    ScreenOrientation.lockAsync(lock);
-  }, [isFullscreen]);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(() => {
+      if (!showChat && !showReactionPicker) {
+        Animated.timing(controlsOpacity, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }).start(() => setControlsVisible(false));
+      }
+    }, 5000);
+  }, [controlsOpacity, showChat, showReactionPicker]);
 
+  // Clean up timer on unmount
   useEffect(() => {
     return () => {
-      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     };
   }, []);
 
-  useEffect(() => {
-    setPlaying(true);
-    if (solo) return;
-    connectSocket(roomId);
-    if (participants.length === 0) {
-      upsertParticipant({ id: "me", name: "You", isHost, micOn: true, cameraOn: true });
-    }
-    return () => disconnectSocket();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId, solo]);
-
-  const onEndRoom = () => {
-    resetPlayer();
-    leaveRoom();
-    navigation.replace("RoomRecap", { roomId });
-  };
-
-  const exitPlayer = () => {
-    resetPlayer();
-    if (navigation.canGoBack()) {
-      navigation.goBack();
+  const handleTapOverlay = () => {
+    if (controlsVisible) {
+      if (showChat || showReactionPicker) return;
+      Animated.timing(controlsOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => setControlsVisible(false));
     } else {
-      navigation.navigate("Main", { screen: "HomeTab", params: { screen: "Home" } });
+      showControlsTemporarily();
     }
   };
 
-  const togglePlayPause = () => setPlaying(!isPlaying);
+  const togglePlayPause = () => {
+    if (player.playing) {
+      player.pause();
+    } else {
+      player.play();
+    }
+    showControlsTemporarily();
+  };
 
-  // Swipe-down-to-dismiss: follows the finger vertically (clamped so it
-  // can't be dragged upward), then either snaps back or exits the player
-  // once it clears a distance/velocity threshold — the same gesture used
-  // to dismiss a fullscreen modal on iOS.
-  const translateY = useSharedValue(0);
-  const backdropOpacity = useSharedValue(1);
+  const seekBackward = () => {
+    player.seekBy(-10);
+    showControlsTemporarily();
+  };
 
-  const panGesture = Gesture.Pan()
-    .activeOffsetY(10)
-    .failOffsetY(-10)
-    .onUpdate((e) => {
-      translateY.value = Math.max(0, e.translationY);
-      backdropOpacity.value = 1 - Math.min(translateY.value / (height * 0.6), 0.5);
-    })
-    .onEnd((e) => {
-      const shouldDismiss = translateY.value > SWIPE_DISMISS_DISTANCE || e.velocityY > SWIPE_DISMISS_VELOCITY;
-      if (shouldDismiss) {
-        translateY.value = withTiming(height, { duration: 220 });
-        backdropOpacity.value = withTiming(0, { duration: 220 }, (finished) => {
-          if (finished) runOnJS(exitPlayer)();
-        });
-      } else {
-        translateY.value = withSpring(0, { damping: 20, stiffness: 250 });
-        backdropOpacity.value = withTiming(1, { duration: 150 });
-      }
-    });
+  const seekForward = () => {
+    player.seekBy(10);
+    showControlsTemporarily();
+  };
 
-  const sheetStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-    opacity: backdropOpacity.value,
-  }));
+  const toggleChat = () => {
+    setShowChat((v) => !v);
+    setShowReactionPicker(false);
+    setShowMenu(false);
+    showControlsTemporarily();
+  };
+
+  const toggleReactionPicker = () => {
+    setShowReactionPicker((v) => !v);
+    setShowMenu(false);
+    showControlsTemporarily();
+  };
+
+  const sendReaction = (emoji: string) => {
+    // For solo mode, we just provide visual feedback
+    setShowReactionPicker(false);
+    showControlsTemporarily();
+  };
+
+  const handleSeek = (seconds: number) => {
+    player.currentTime = seconds;
+    showControlsTemporarily();
+  };
+
+  const toggleMute = () => {
+    player.muted = !player.muted;
+    showControlsTemporarily();
+  };
+
+  // ------ Error state for playback issues (before video loads) ------
+
+  // SUBSCRIPTION_REQUIRED (403)
+  if (playbackErrorCode === ERR_SUBSCRIPTION_REQUIRED) {
+    return (
+      <View style={styles.container}>
+        <StatusBar hidden />
+        <SafeAreaView edges={["top"]} className="absolute top-0 left-0 right-0 z-10">
+          <Pressable onPress={() => navigation.goBack()} className="ml-4 mt-2 h-9 w-9 items-center justify-center rounded-full bg-black/50">
+            <ChevronDown size={20} color="#fff" />
+          </Pressable>
+        </SafeAreaView>
+        <View className="flex-1 items-center justify-center px-8">
+          <CreditCard size={48} color="#f87171" />
+          <Text className="mt-4 text-lg font-['Manrope_600SemiBold'] text-red-400">Subscription Required</Text>
+          <Text className="mt-2 text-sm text-white/50 text-center">
+            An active subscription is required to play this title.
+          </Text>
+          <Pressable 
+            onPress={() => {
+              navigation.goBack();
+              // Navigate to subscription screen
+              navigation.navigate("Main", {
+                screen: "ProfileTab",
+                params: { screen: "Subscription" },
+              });
+            }} 
+            className="mt-6 rounded-lg bg-blue-600 px-6 py-3"
+          >
+            <Text className="text-sm font-['Manrope_600SemiBold'] text-white">View Plans</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  // TITLE_NOT_PLAYABLE (404)
+  if (playbackErrorCode === ERR_TITLE_NOT_PLAYABLE) {
+    return (
+      <View style={styles.container}>
+        <StatusBar hidden />
+        <SafeAreaView edges={["top"]} className="absolute top-0 left-0 right-0 z-10">
+          <Pressable onPress={() => navigation.goBack()} className="ml-4 mt-2 h-9 w-9 items-center justify-center rounded-full bg-black/50">
+            <ChevronDown size={20} color="#fff" />
+          </Pressable>
+        </SafeAreaView>
+        <View className="flex-1 items-center justify-center px-8">
+          <AlertTriangle size={48} color="#fbbf24" />
+          <Text className="mt-4 text-lg font-['Manrope_600SemiBold'] text-yellow-400">Not Available</Text>
+          <Text className="mt-2 text-sm text-white/50 text-center">
+            This title is not available right now.
+          </Text>
+          <Pressable onPress={() => navigation.goBack()} className="mt-6 rounded-lg bg-blue-600 px-6 py-3">
+            <Text className="text-sm font-['Manrope_600SemiBold'] text-white">Go Back</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  // Cloudflare errors (502/503)
+  if (playbackErrorCode === ERR_CLOUDFLARE_STREAM_ERROR || playbackErrorCode === ERR_CLOUDFLARE_UNCONFIGURED) {
+    return (
+      <View style={styles.container}>
+        <StatusBar hidden />
+        <SafeAreaView edges={["top"]} className="absolute top-0 left-0 right-0 z-10">
+          <Pressable onPress={() => navigation.goBack()} className="ml-4 mt-2 h-9 w-9 items-center justify-center rounded-full bg-black/50">
+            <ChevronDown size={20} color="#fff" />
+          </Pressable>
+        </SafeAreaView>
+        <View className="flex-1 items-center justify-center px-8">
+          <WifiOff size={48} color="#60a5fa" />
+          <Text className="mt-4 text-lg font-['Manrope_600SemiBold'] text-blue-400">Stream Unavailable</Text>
+          <Text className="mt-2 text-sm text-white/50 text-center">
+            {playbackErrorCode === ERR_CLOUDFLARE_STREAM_ERROR
+              ? "There was an issue loading the stream. Please try again."
+              : "The stream source is not fully configured yet. Please try again later."}
+          </Text>
+          <Pressable 
+            onPress={() => {
+              setPlaybackErrorCode(null);
+              retryPlayback();
+            }} 
+            className="mt-6 flex-row items-center gap-2 rounded-lg bg-blue-600 px-6 py-3"
+          >
+            <RotateCcw size={16} color="#fff" />
+            <Text className="text-sm font-['Manrope_600SemiBold'] text-white">Try Again</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  // Loading state (waiting for playback URL)
+  if (playbackLoading || (!playbackUrl && !playbackErrorCode)) {
+    return (
+      <View style={styles.container}>
+        <StatusBar hidden />
+        <SafeAreaView edges={["top"]} className="absolute top-0 left-0 right-0 z-10">
+          <Pressable onPress={() => navigation.goBack()} className="ml-4 mt-2 h-9 w-9 items-center justify-center rounded-full bg-black/50">
+            <ChevronDown size={20} color="#fff" />
+          </Pressable>
+        </SafeAreaView>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#3B82F6" />
+          <Text className="mt-4 text-sm text-white/70">Loading video...</Text>
+          <Text className="mt-2 text-xs text-white/40">{titleName}</Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Error state (video player error after loading URL)
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <StatusBar hidden />
+        <SafeAreaView edges={["top"]} className="absolute top-0 left-0 right-0 z-10">
+          <Pressable onPress={() => navigation.goBack()} className="ml-4 mt-2 h-9 w-9 items-center justify-center rounded-full bg-black/50">
+            <ChevronDown size={20} color="#fff" />
+          </Pressable>
+        </SafeAreaView>
+        <View className="flex-1 items-center justify-center px-8">
+          <Text className="text-lg font-['Manrope_600SemiBold'] text-red-400">Couldn't load video</Text>
+          <Text className="mt-2 text-sm text-white/50 text-center">{error}</Text>
+          <Pressable 
+            onPress={() => {
+              setError(null);
+              retryPlayback();
+            }} 
+            className="mt-6 flex-row items-center gap-2 rounded-lg bg-blue-600 px-6 py-3"
+          >
+            <RotateCcw size={16} color="#fff" />
+            <Text className="text-sm font-['Manrope_600SemiBold'] text-white">Try Again</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  const matchScore = matchScoreFor(titleName);
 
   return (
-    <View className="flex-1 bg-black">
-      <StatusBar hidden={isFullscreen} />
+    <View style={styles.container}>
+      <StatusBar hidden />
+      
+      {/* Video Player - full screen */}
+      <View style={styles.videoContainer}>
+        <VideoView
+          player={player}
+          style={styles.video}
+          contentFit="contain"
+          nativeControls={false}
+        />
+      </View>
 
-      <GestureDetector gesture={panGesture}>
-        <Animated.View style={[{ flex: 1 }, sheetStyle]}>
-          <Pressable onPress={togglePlayPause} style={{ flex: 1 }}>
-            <VideoView player={player} style={{ flex: 1 }} contentFit="contain" nativeControls={false} />
-          </Pressable>
+      {/* Netflix-style Overlay - appears on tap */}
+      <Pressable 
+        style={StyleSheet.absoluteFill}
+        onPress={handleTapOverlay}
+      >
+        {/* Controls Overlay */}
+        {controlsVisible && (
+          <Animated.View 
+            style={[styles.overlay, { opacity: controlsOpacity }]}
+            pointerEvents="box-none"
+          >
+            {/* Dark gradient overlay for readability */}
+            <View style={styles.overlayGradient} />
 
-          {!solo &&
-            !isFullscreen &&
-            participants.map((participant, i) => {
-              const columns = width < 380 ? 2 : 3;
-              const bubbleSize = Math.min(84, width / columns - 24);
-              const headerHeight = insets.top + 76;
-              return (
-                <FaceBubble
-                  key={participant.id}
-                  participant={participant}
-                  size={bubbleSize}
-                  initialX={16 + (i % columns) * (bubbleSize + 12)}
-                  initialY={headerHeight + Math.floor(i / columns) * (bubbleSize + 12)}
-                  onTogglePin={(id) =>
-                    upsertParticipant({ ...participant, isPinned: participant.id === id ? !participant.isPinned : false })
-                  }
-                />
-              );
-            })}
-
-          {!isFullscreen && (
-            <SafeAreaView edges={["top"]} className="absolute inset-x-0 top-0" pointerEvents="box-none">
-              <View className="flex-row items-center justify-between gap-2 px-5 py-2">
-                <Pressable
-                  onPress={exitPlayer}
-                  hitSlop={8}
-                  className="h-10 w-10 items-center justify-center rounded-full bg-black/50"
-                >
-                  <ChevronDown size={20} color="#fff" />
-                </Pressable>
-                {!solo && <SyncIndicator />}
-                <View className="flex-row gap-2">
-                  <Pressable
-                    onPress={() => setInfoOpen(true)}
-                    hitSlop={8}
-                    className="h-10 w-10 items-center justify-center rounded-full bg-black/50"
-                  >
-                    <Info size={16} color="#fff" />
+            {/* Top bar - Netflix style */}
+            <SafeAreaView edges={["top"]} className="absolute top-0 left-0 right-0 z-20">
+              <View className="flex-row items-center justify-between px-4 pt-2">
+                <View className="flex-row items-center gap-3 flex-1">
+                  <Pressable onPress={() => navigation.goBack()} hitSlop={8} className="h-9 w-9 items-center justify-center rounded-full bg-black/50">
+                    <ChevronDown size={20} color="#fff" />
                   </Pressable>
-                  {!solo && (
-                    <>
-                      <Pressable
-                        onPress={() => setParticipantsOpen(true)}
-                        hitSlop={8}
-                        className="h-10 w-10 items-center justify-center rounded-full bg-black/50"
-                      >
-                        <Users size={16} color="#fff" />
-                      </Pressable>
-                      <Pressable
-                        onPress={() => setChatOpen(true)}
-                        hitSlop={8}
-                        className="h-10 w-10 items-center justify-center rounded-full bg-black/50"
-                      >
-                        <MessageSquare size={16} color="#fff" />
-                      </Pressable>
-                    </>
-                  )}
-                </View>
-              </View>
-              <Text className="px-5 text-xs text-white/60">{displayTitle.name}</Text>
-            </SafeAreaView>
-          )}
-
-          {!solo && !isFullscreen && <ReactionsBar />}
-
-          {infoOpen && (
-            <Pressable
-              onPress={() => setInfoOpen(false)}
-              className="absolute inset-0 items-end bg-black/60 px-5"
-              style={{ justifyContent: "flex-start", paddingTop: insets.top + 84 }}
-            >
-              <Pressable className="w-full gap-3 rounded-2xl border border-line/10 bg-navy-950 p-5">
-                <View className="flex-row items-start justify-between">
-                  <Text className="flex-1 pr-3 text-lg font-['Manrope_700Bold'] text-foreground">{displayTitle.name}</Text>
-                  <Pressable onPress={() => setInfoOpen(false)} hitSlop={8}>
-                    <X size={18} color={colors.blue300} />
-                  </Pressable>
+                  <View className="flex-1">
+                    <Text className="text-sm font-['Manrope_600SemiBold'] text-white" numberOfLines={1}>
+                      {titleName}
+                    </Text>
+                    {/* Movie metadata line */}
+                    <View className="flex-row items-center gap-2 mt-0.5">
+                      <Text className="text-xs font-['Manrope_700Bold'] text-green-400">
+                        {matchScore}% Match
+                      </Text>
+                      {params?.titleId && (
+                        <Text className="text-[10px] text-blue-100/60">Now Playing</Text>
+                      )}
+                    </View>
+                  </View>
                 </View>
                 <View className="flex-row items-center gap-3">
-                  <Badge>{displayTitle.genre}</Badge>
-                  {displayTitle.year > 0 && <Text className="text-xs text-blue-100/60">{displayTitle.year}</Text>}
-                  <Text className="text-xs text-blue-100/60">{displayTitle.rating}</Text>
-                  {displayTitle.runtimeMinutes > 0 && (
-                    <View className="flex-row items-center gap-1">
-                      <Clock size={11} color={colors.blue300} />
-                      <Text className="text-xs text-blue-100/60">{displayTitle.runtimeMinutes}m</Text>
-                    </View>
-                  )}
+                  {/* 3-dot Kebab Menu */}
+                  <Pressable 
+                    onPress={() => setShowMenu((v) => !v)}
+                    hitSlop={8} 
+                    className={`h-9 w-9 items-center justify-center rounded-full ${showMenu ? 'bg-blue-600' : 'bg-black/50'}`}
+                  >
+                    <MoreVertical size={20} color="#fff" />
+                  </Pressable>
                 </View>
-                <Text className="text-sm leading-5 text-blue-100/80">{displayTitle.synopsis}</Text>
-              </Pressable>
-            </Pressable>
-          )}
+              </View>
+              {/* Dropdown menu for 3-dot */}
+              {showMenu && (
+                <View className="absolute right-4 top-14 z-50 rounded-2xl bg-navy-950/95 border border-white/10 p-2 shadow-2xl min-w-[160px]">
+                  <Pressable
+                    onPress={toggleReactionPicker}
+                    className="flex-row items-center gap-3 rounded-xl px-4 py-3 active:bg-white/10"
+                  >
+                    <Smile size={18} color="#fff" />
+                    <Text className="text-sm text-white">React</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={toggleChat}
+                    className="flex-row items-center gap-3 rounded-xl px-4 py-3 active:bg-white/10"
+                  >
+                    <MessageCircle size={18} color="#fff" />
+                    <Text className="text-sm text-white">Chat</Text>
+                  </Pressable>
+                </View>
+              )}
+            </SafeAreaView>
 
-          <View className="absolute inset-x-0 bottom-0" style={{ paddingBottom: insets.bottom }}>
-            <PlayerControls
-              isHost={solo ? true : isHost}
-              onSeek={(seconds) => {
-                player.currentTime = seconds;
-              }}
-              onOpenSettings={() => setSettingsOpen(true)}
-            />
-          </View>
+            {/* Center controls - properly centered */}
+            <View className="absolute inset-0 items-center justify-center z-10">
+              <View className="flex-row items-center gap-8">
+                <Pressable onPress={seekBackward} hitSlop={12} className="h-12 w-12 items-center justify-center rounded-full bg-black/30">
+                  <RotateCcw size={26} color="#fff" />
+                </Pressable>
+                <Pressable 
+                  onPress={togglePlayPause}
+                  className="h-16 w-16 items-center justify-center rounded-full bg-white/20"
+                >
+                  {isPlaying ? <Pause size={32} color="#fff" fill="#fff" /> : <Play size={32} color="#fff" fill="#fff" />}
+                </Pressable>
+                <Pressable onPress={seekForward} hitSlop={12} className="h-12 w-12 items-center justify-center rounded-full bg-black/30">
+                  <RotateCw size={26} color="#fff" />
+                </Pressable>
+              </View>
+            </View>
 
-          {!solo && chatOpen && <ChatDrawer onClose={() => setChatOpen(false)} />}
-          {!solo && participantsOpen && (
-            <ParticipantsSheet
-              isHost={isHost}
-              onClose={() => setParticipantsOpen(false)}
-              onLeave={() => {
-                resetPlayer();
-                leaveRoom();
-                navigation.goBack();
-              }}
-              onEndRoom={onEndRoom}
-            />
-          )}
-          {settingsOpen && <QualitySheet onClose={() => setSettingsOpen(false)} />}
-        </Animated.View>
-      </GestureDetector>
+            {/* Reaction Picker - shown from 3-dot menu */}
+            {showReactionPicker && (
+              <View className="absolute bottom-32 left-4 right-4 z-30">
+                <View className="rounded-2xl bg-navy-950/95 border border-white/10 p-3">
+                  <Text className="text-xs font-['Manrope_600SemiBold'] text-blue-100/70 mb-2 text-center">
+                    Send a reaction
+                  </Text>
+                  <View className="flex-row flex-wrap justify-center gap-1">
+                    {REACTION_EMOJIS.map((emoji) => (
+                      <Pressable
+                        key={emoji}
+                        onPress={() => sendReaction(emoji)}
+                        className="h-10 w-10 items-center justify-center active:bg-white/10 rounded-lg"
+                      >
+                        <Text className="text-2xl">{emoji}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* Bottom bar */}
+            <SafeAreaView edges={["bottom"]} className="absolute bottom-0 left-0 right-0 z-10">
+              <View className="px-4 pb-4">
+                {/* Scrub bar with time labels */}
+                <View className="flex-row items-center gap-2 mb-2">
+                  <Text className="text-xs text-white/70 w-10 text-right font-['Manrope_500Medium']">
+                    {formatTime(currentTime)}
+                  </Text>
+                  <View className="flex-1">
+                    <ScrubBar
+                      value={currentTime}
+                      max={duration || 1}
+                      disabled={false}
+                      onChangeComplete={handleSeek}
+                    />
+                  </View>
+                  <Text className="text-xs text-white/70 w-10 font-['Manrope_500Medium']">
+                    {formatTime(duration)}
+                  </Text>
+                </View>
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center gap-3">
+                    <Pressable onPress={togglePlayPause} hitSlop={8}>
+                      {isPlaying ? <Pause size={20} color="#fff" /> : <Play size={20} color="#fff" />}
+                    </Pressable>
+                  </View>
+                  <View className="flex-row items-center gap-4">
+                    <Pressable onPress={toggleMute} hitSlop={8}>
+                      {isMuted ? <VolumeX size={18} color="#fff" /> : <Volume2 size={18} color="#fff" />}
+                    </Pressable>
+                    <Text className="text-xs text-white/50">HD</Text>
+                    <Maximize size={18} color="#fff" />
+                  </View>
+                </View>
+              </View>
+            </SafeAreaView>
+          </Animated.View>
+        )}
+      </Pressable>
+
+      {/* Chat Drawer */}
+      {showChat && (
+        <ChatDrawer onClose={() => setShowChat(false)} />
+      )}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#000",
+  },
+  videoContainer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  video: {
+    flex: 1,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  overlayGradient: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.55)",
+  },
+});
+
